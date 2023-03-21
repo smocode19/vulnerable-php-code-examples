@@ -1,21 +1,33 @@
-name: Psalm Workflow
+name: Advanced Security with Psalm
+
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
+
 jobs:
-  psalm:
+  analysis:
     runs-on: ubuntu-latest
+    container:
+      image: vimeo/psalm-github-actions:latest
+      options: --user root # This is needed to allow the container to install PHP 8.3
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.3'
-    - name: Install dependencies
-      run: composer install
-    - name: Run Psalm
-      run: vendor/bin/psalm --set=github --update-baseline
-    - name: Upload results to GitHub Advanced Security
-      uses: github/codeql-action/upload-sarif@v1
-      with:
-        sarif_file: psalm.sarif
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install PHP 8.3
+        run: |
+          add-apt-repository ppa:ondrej/php
+          apt-get update
+          apt-get install -y php8.3
+
+      - name: Run Psalm analysis
+        uses: vimeo/psalm-github-actions@v3
+        with:
+          security_analysis: true
+          report_file: results.sarif
+
+      - name: Upload SARIF results
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: results.sarif
